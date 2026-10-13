@@ -232,6 +232,13 @@ select#pick option,select#pick optgroup{background:#10171f}
 .sres .l1{display:flex;gap:6px;align-items:center;min-width:0}.sres .l1 .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sres .l2{grid-column:2/4;font-size:.74rem;color:#9fb0c2;display:flex;gap:4px 10px;flex-wrap:wrap}
 .sres .yr{font-family:var(--font-mono);font-size:.76rem;color:#b9c7d6}
+.brlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.brg{border-left:3px solid var(--rc);border-radius:6px;background:#0d151f}
+.brg .rk{width:100%;border-left:0;border-radius:0 6px 0 0}
+.brg.on .rk{background:#152131;border-color:var(--rc)}
+.brno{display:inline-grid;place-items:center;min-width:18px;height:18px;margin-right:6px;border-radius:50%;background:var(--rc);color:#06111c;font-size:.72rem;font-weight:800}
+.brm{display:flex;flex-wrap:wrap;gap:4px 12px;padding:6px 10px 8px 12px;font-size:.8rem}
+.brm a{color:var(--ink);text-decoration:none}.brm a:hover{text-decoration:underline}
 .ssum{font-size:.8rem;color:#9fb0c2;margin-top:6px}.ssum b{color:var(--ink)}.ssum .o{color:#fb7185}
 @media (max-width:960px){.pgrip{display:none}}
 @media (max-width:960px){.panel{position:static!important;width:auto;max-height:none!important}.toolbar,.legend{padding-right:8px!important}.view .attr{right:8px!important}}
@@ -2045,6 +2052,7 @@ var EQM=null; // {k:"X8"|…|"RACK", rack:null|id}
 const eqIcons=new THREE.Group(); rackScene.add(eqIcons);
 let eqZone=null, EQFL=[];
 const RACKPAL=["#22d3ee","#fb923c","#f472b6","#facc15","#a3e635","#e879f9"];
+const BRPAL=["#38bdf8","#fb923c","#a3e635","#f472b6","#facc15","#a78bfa","#2dd4bf","#f87171","#e879f9","#4ade80","#fdba74","#93c5fd"]; // 1차 분기 구역 색
 const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim()||"#fff";
 function eqSites(){ // buildings (and plant rooms with their own equipment) of the current campus
   const L=B.filter(b=>b.campus===CAMPUS).map(b=>({b,L:equipList(b)}));
@@ -2053,13 +2061,18 @@ function eqSites(){ // buildings (and plant rooms with their own equipment) of t
 function rackInfo(){
   const S=eqSites().filter(s=>s.L.some(x=>x.grp==="광렉")), R={}; let pi=0;
   S.forEach(s=>{const h=HUBNODE[s.b.id]||(String(s.b.id).startsWith("@")?s.b.hub:null);
-    R[s.b.id]={id:s.b.id,b:s.b,col:h&&HUBS[h]?cssv(HUBS[h].css):RACKPAL[pi++%RACKPAL.length],mem:[],edges:[]}});
+    R[s.b.id]={id:s.b.id,b:s.b,col:h&&HUBS[h]?cssv(HUBS[h].css):RACKPAL[pi++%RACKPAL.length],mem:[],edges:[],br:new Map()}});
   const rk=n=>R[n]?n:(HUBNODE[n]&&R["@"+HUBNODE[n]])?"@"+HUBNODE[n]:null;
   B.filter(b=>b.campus===CAMPUS).forEach(b=>{const p=viewPath(b.id); let j=p.nodes.length-2;
     for(;j>=0;j--)if(rk(p.nodes[j]))break; if(j<0)return;
     const r=R[rk(p.nodes[j])]; if(r.id===b.id)return; const sub=p.edges.slice(j), M=mediaFor([b.id]);
     if(!sub.length||!(M.get(sub[0].e)||new Set()).has("광"))return;     // first hop out of the rack must be fibre
-    r.mem.push(b); sub.forEach(x=>{if((M.get(x.e)||new Set()).has("광")&&!r.edges.some(y=>y.e===x.e))r.edges.push(x)})});
+    r.mem.push(b); sub.forEach(x=>{if((M.get(x.e)||new Set()).has("광")&&!r.edges.some(y=>y.e===x.e))r.edges.push(x)});
+    let g=r.br.get(sub[0].e); if(!g)r.br.set(sub[0].e,g={mem:[],edges:[],d:Infinity,first:null});
+    g.mem.push(b); if(sub.length<g.d){g.d=sub.length; g.first=b}
+    sub.forEach(x=>{if((M.get(x.e)||new Set()).has("광")&&!g.edges.some(y=>y.e===x.e))g.edges.push(x)})});
+  // branches in a fixed order (nearest building's number), each with its own colour
+  Object.values(R).forEach(r=>{r.brs=[...r.br.values()].sort((a,c)=>String(a.first.code).localeCompare(String(c.first.code),undefined,{numeric:true})); r.brs.forEach((g,i)=>g.col=BRPAL[i%BRPAL.length])});
   return R}
 function eqTargets(){
   if(EQM.k==="RACK"){const R=rackInfo(); return {R,list:Object.values(R).map(r=>({b:r.b,n:1,col:r.col}))}}
@@ -2075,12 +2088,17 @@ function eqApply(opt={}){
   shown.forEach((t,i)=>{const kind=EQM.k==="RACK"?"RACK":EQM.k, lab=EQM.k==="RACK"?"광 통신렉":TYPES[EQM.k].name;
     const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:holoTex(kind,t.col,lab,t.n),transparent:true,opacity:0,depthWrite:false}));
     const p=V(t.b.X,t.b.Z,0); sp.position.set(p.x,eqTop(t.b),p.z); sp.renderOrder=9; sp.userData={y0:eqTop(t.b),t0:now+i*35,ph:i*.7}; eqIcons.add(sp)});
+  eqIcons.children.forEach((sp,i)=>sp.userData.rk=EQM.k==="RACK"?shown[i].b.id:null);
   const ids=new Set(shown.map(t=>t.b.id)); EQM.ids=ids;
   // zones
   let mem=new Map();
-  if(R){(one?[one]:Object.values(R)).forEach(r=>r.mem.forEach(b=>{if(!ids.has(b.id)&&!mem.has(b.id))mem.set(b.id,r.col)}));
-    const act=one?one.edges:Object.values(R).flatMap(r=>r.edges), only=new Map(); act.forEach(x=>only.set(x.e,new Set(["광"])));
-    lastHubIds=null; setEdges(act,null,only); eqZone=zoneMesh(one?[one]:Object.values(R))}
+  if(one){const brs=EQM.br!=null&&one.brs[EQM.br]?[one.brs[EQM.br]]:one.brs;
+    brs.forEach(g=>g.mem.forEach(b=>{if(!ids.has(b.id)&&!mem.has(b.id))mem.set(b.id,g.col)}));
+    const act=brs.flatMap(g=>g.edges), only=new Map(); act.forEach(x=>only.set(x.e,new Set(["광"])));
+    lastHubIds=null; setEdges(act,null,only); eqZone=zoneMesh(brs.map(g=>({col:g.col,b:null,mem:g.mem,edges:g.edges})))}
+  else if(R){Object.values(R).forEach(r=>r.mem.forEach(b=>{if(!ids.has(b.id)&&!mem.has(b.id))mem.set(b.id,r.col)}));
+    const act=Object.values(R).flatMap(r=>r.edges), only=new Map(); act.forEach(x=>only.set(x.e,new Set(["광"])));
+    lastHubIds=null; setEdges(act,null,only); eqZone=zoneMesh(Object.values(R))}
   else setEdges(null,null,null);
   EQM.mem=mem; EQM.R=R;
   B.forEach(b=>{const on=ids.has(b.id)||mem.has(b.id); b.pin.material.opacity=on?.95:.22; b.pin.material.emissiveIntensity=ids.has(b.id)?.95:.45});
@@ -2092,10 +2110,10 @@ function eqApply(opt={}){
 // zone = union of the members' footprints (buffered) and the fibre corridors, drawn on one ground texture
 function zoneMesh(racks){
   const PAD=9, RING=2.4, pts=[]; const geo=racks.map(r=>{const polys=[], lines=[], dots=[];
-    [r.b,...r.mem].forEach(b=>{const o=b.osm&&OB[b.osm]; if(o&&o.poly&&!String(b.id).startsWith("@")){polys.push(o.poly); o.poly.forEach(p=>pts.push(p))} else {dots.push([b.X,b.Z]); pts.push([b.X,b.Z])}});
+    [r.b,...r.mem].filter(Boolean).forEach(b=>{const o=b.osm&&OB[b.osm]; if(o&&o.poly&&!String(b.id).startsWith("@")){polys.push(o.poly); o.poly.forEach(p=>pts.push(p))} else {dots.push([b.X,b.Z]); pts.push([b.X,b.Z])}});
     r.edges.forEach(x=>{lines.push(x.e.pts); x.e.pts.forEach(p=>pts.push(p))});
     return {col:r.col,polys,lines,dots}}).filter(g=>g.polys.length+g.dots.length>1||g.lines.length);
-  if(!pts.length)return null;
+  if(!pts.length||!geo.length)return null;
   const M=PAD+RING+4; let x0=Infinity,z0=Infinity,x1=-Infinity,z1=-Infinity; pts.forEach(([x,z])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z)});
   x0-=M; z0-=M; x1+=M; z1+=M; const s=Math.min(2048/(x1-x0),2048/(z1-z0),3), W=Math.ceil((x1-x0)*s), H=Math.ceil((z1-z0)*s);
   const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const g=cv.getContext("2d");
@@ -2114,7 +2132,7 @@ function zoneMesh(racks){
 function eqToggle(k){
   if(EQM&&EQM.k===k&&!EQM.rack){eqOff(); panelMode=null; renderPanel(); return}
   panelMode=null; curHub=null; Object.keys(HUBS).forEach(h=>$("hub-"+h).setAttribute("aria-pressed","false")); select(null,{quiet:true});
-  EQM={k,rack:null}; panelMode="eqmap"; renderLegendEq(); eqApply(); renderPanel(); resetBtn.disabled=false}
+  EQM={k,rack:null,br:null}; panelMode="eqmap"; renderLegendEq(); eqApply(); renderPanel(); resetBtn.disabled=false}
 function eqPaint(o){ // building colours while the locator is on; returns true when handled
   if(!EQM)return false; const ids=o.ids||[];
   const hit=ids.find(i=>EQM.ids&&EQM.ids.has(i)), zc=!hit&&ids.map(i=>EQM.mem&&EQM.mem.get(i)).find(Boolean);
@@ -2137,18 +2155,24 @@ function renderEqPanel(p){
   let body;
   if(!rack)body=`<div class="sec"><h3>설치 건물 (${T.list.length}곳 · ${tot}대)</h3><table><thead><tr><th>건물</th><th class="n">수량</th></tr></thead><tbody>${T.list.sort((a,c)=>c.n-a.n||String(a.b.code).localeCompare(String(c.b.code),undefined,{numeric:true})).map(x=>`<tr class="row-btn" tabindex="0" ${go(x.b)}><td>${nm(x.b)}</td><td class="n">${x.n}</td></tr>`).join("")}</tbody></table><p class="note">건물을 누르면 해당 건물로 이동합니다.</p></div>`;
   else {const R=Object.values(T.R);
-    body=`<div class="sec"><h3>광렉 거점 (${R.length}곳)</h3><p class="note">거점을 누르면 그 광렉에서 1차 광통신으로 연결된 건물 구역만 표시합니다.</p>
+    body=(EQM.rack&&T.R[EQM.rack]?(r=>`<div class="sec"><h3>${nm(r.b)} 광렉 · 1차 분기 ${r.brs.length}개 · 건물 ${r.mem.length}곳</h3>${r.mem.length?`<p class="note">광렉에서 처음 갈라져 나가는 광 선로별로 구역을 나눠 색으로 구분합니다. 분기를 누르면 그 분기만 지도에 표시합니다.</p>
+        <div class="brlist">${r.brs.map((g,i)=>`<div class="brg${EQM.br===i?" on":""}" style="--rc:${g.col}"><button type="button" class="rk" data-br="${i}" aria-pressed="${EQM.br===i}"><i></i><span><b class="brno">${i+1}</b>${esc(g.first.name)} 방향</span><em>${g.mem.length}곳</em></button>
+          <div class="brm">${g.mem.slice().sort((a,c)=>pathOf(a.id).nodes.length-pathOf(c.id).nodes.length||String(a.code).localeCompare(String(c.code),undefined,{numeric:true})).map(b=>`<a href="#" data-goid="${b.id}">${nm(b)}${T.R[b.id]?` <span style="color:${T.R[b.id].col}">· 광렉</span>`:""}</a>`).join("")}</div></div>`).join("")}</div>
+        ${EQM.br!=null?`<button type="button" class="rkall" id="brAll">모든 분기 보기</button>`:""}`:`<p class="note">이 광렉에서 광으로 직접 연결된 다른 건물이 없습니다.</p>`}<p style="margin-top:8px"><a href="#" ${go(r.b).replace("data-","data-go")}>${nm(r.b)} 상세 보기 →</a></p></div>`)(T.R[EQM.rack]):"")+`<div class="sec"><h3>광렉 거점 (${R.length}곳)</h3><p class="note">거점을 누르면 그 광렉에서 1차 광통신으로 연결된 건물 구역만 표시합니다.</p>
       <div class="rklist">${R.map(r=>`<button type="button" class="rk" data-rk="${esc(r.id)}" aria-pressed="${EQM.rack===r.id}" style="--rc:${r.col}"><i></i><span>${nm(r.b)}</span><em>${r.mem.length}개 건물</em></button>`).join("")}</div>
-      ${EQM.rack?`<button type="button" class="rkall" id="rkAll">전체 광렉 보기</button>`:""}</div>`+
-      (EQM.rack&&T.R[EQM.rack]?(r=>`<div class="sec"><h3>${nm(r.b)} 광렉 구역 · ${r.mem.length}개 건물</h3>${r.mem.length?`<table><tbody>${r.mem.slice().sort((a,c)=>String(a.code).localeCompare(String(c.code),undefined,{numeric:true})).map(b=>`<tr class="row-btn" tabindex="0" data-id="${b.id}"><td>${nm(b)}${T.R[b.id]?` <span style="color:${T.R[b.id].col}">· 광렉</span>`:""}</td></tr>`).join("")}</tbody></table>`:`<p class="note">이 광렉에서 광으로 직접 연결된 다른 건물이 없습니다.</p>`}<p style="margin-top:8px"><a href="#" ${go(r.b).replace("data-","data-go")}>${nm(r.b)} 상세 보기 →</a></p></div>`)(T.R[EQM.rack]):"")}
+      ${EQM.rack?`<button type="button" class="rkall" id="rkAll">전체 광렉 보기</button>`:""}</div>`}
   p.innerHTML=`<div class="panel-hd"><div class="eyebrow">${CAMPUS_NAME[CAMPUS]} · 장비 위치</div><h2>${name}</h2><p class="net">${rack?"광렉이 있는 건물이 깜빡이고, 각 광렉에서 광으로 연결된 구역을 같은 색으로 표시합니다.":`${name}${/[24579]$/.test(name)?"가":"이"} 설치된 건물이 깜빡이고 건물 위에 장비 아이콘과 수량이 올라옵니다.`}</p></div>${body}
     <div class="sec"><button type="button" class="rkall" id="eqClose">장비 표시 끄기</button></div>`;
   bindRows(p);
   p.querySelectorAll("[data-goid]").forEach(a=>a.onclick=e=>{e.preventDefault(); panelMode=null; select(a.dataset.goid)});
   p.querySelectorAll("[data-gohub]").forEach(a=>a.onclick=e=>{e.preventDefault(); panelMode=null; selectHub(a.dataset.gohub,{asBld:true})});
-  p.querySelectorAll("[data-rk]").forEach(btn=>btn.onclick=()=>{EQM.rack=EQM.rack===btn.dataset.rk?null:btn.dataset.rk; eqApply(); renderPanel()});
-  const ra=$("rkAll"); if(ra)ra.onclick=()=>{EQM.rack=null; eqApply(); renderPanel()};
+  p.querySelectorAll("[data-rk]").forEach(btn=>btn.onclick=()=>pickRack(btn.dataset.rk));
+  p.querySelectorAll("[data-br]").forEach(btn=>btn.onclick=()=>{const i=+btn.dataset.br; EQM.br=EQM.br===i?null:i; eqApply(); renderPanel()});
+  const ra=$("rkAll"); if(ra)ra.onclick=()=>pickRack(null);
+  const ba=$("brAll"); if(ba)ba.onclick=()=>{EQM.br=null; eqApply(); renderPanel()};
   $("eqClose").onclick=()=>{eqOff(); panelMode=null; select(null)}}
+// choose a rack (panel list, its icon or its building on the map); the same rack again goes back to all racks
+function pickRack(id){EQM.rack=id&&EQM.rack!==id?id:null; EQM.br=null; eqApply(); renderPanel(); $("panel").scrollTop=0}
 function selectOther(o){ select(null,{quiet:true}); curOther=o; paintBuildings(); renderPanel() }
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape")return;
@@ -2161,6 +2185,7 @@ document.addEventListener("keydown",e=>{
 const ray=new THREE.Raycaster(), mv=new THREE.Vector2(); let down=null; const tip=$("tip");
 function setMV(e){const r=renderer.domElement.getBoundingClientRect();mv.set(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(mv,camera);return r}
 function hitTest(){
+  if(EQM&&EQM.k==="RACK"&&eqIcons.children.length){const hi=ray.intersectObjects(eqIcons.children); if(hi.length&&hi[0].object.userData.rk)return {rk:hi[0].object.userData.rk}}
   const hh=ray.intersectObjects(HUBPICK.filter(m=>m.userData.campus===CAMPUS)); if(hh.length)return {hub:hh[0].object.userData.hub};
   const hp=ray.intersectObjects(pickables.filter(m=>m.userData.campus===CAMPUS)); if(hp.length){const b=BY[hp[0].object.userData.id]; return {id:b.id,o:OB[b.osm]}}
   const hb=ray.intersectObjects(BMESH.filter(m=>m.userData.o.campus===CAMPUS)); if(hb.length){const o=hb[0].object.userData.o; return {o,id:o.ids?o.ids[0]:null}}
@@ -2175,13 +2200,15 @@ function onMapClick(h){
   if(pending){ if(h&&h.o){const f=pending; pending=null; setHint(toolHint()); f(h.o)} else setHint("건물 위를 눌러 주세요 · Esc: 취소"); return }
   if(editing&&tool==="add"){ if(h&&h.o)openNew(h.o); else setHint("DDC를 추가할 건물을 누르세요"); return }
   if(editing&&tool==="link"){ linkClick(h); return }
+  if(EQM&&EQM.k==="RACK"&&h&&EQM.R){const R=EQM.R, id=h.rk||(h.hub?(R["@"+h.hub]?"@"+h.hub:R[HUBS[h.hub].node]?HUBS[h.hub].node:null):h.id&&R[h.id]?h.id:null);
+    if(id){pickRack(id); return}}
   if(!h)return; panelMode=null;
   if(h.hub)selectHub(h.hub,{asBld:true}); else if(h.id)select(h.id);
   else { const l=chipText(h.o), unnamed=NONAME.has(h.o.oid)&&!LED[h.o.oid]||!(l.nm||l.code||h.o.name); if(unnamed&&!editing)return; selectOther(h.o) }
 }
 renderer.domElement.addEventListener("pointermove",e=>{
   if(e.pointerType!=="mouse")return; const r=setMV(e); const h=hitTest();
-  if(h){const t=h.hub?`${esc(HUBNAME(h.hub))}<span>기계실</span>`:h.id?`${esc(BY[h.id].name)}<span>${esc(BY[h.id].code)} · DDC ${BY[h.id].total}</span>`:(()=>{const l=chipText(h.o), nm=NONAME.has(h.o.oid)&&!LED[h.o.oid]?"":(l.nm||h.o.name||""); return nm||l.code&&!NONAME.has(h.o.oid)?`${esc(nm||l.code)}<span>DDC 없음</span>`:""})();
+  if(h){const t=h.rk?`${esc(EQM.R&&EQM.R[h.rk]?EQM.R[h.rk].b.name:"")}<span>광렉 · 눌러서 1차 분기 구역 보기</span>`:h.hub?`${esc(HUBNAME(h.hub))}<span>기계실</span>`:h.id?`${esc(BY[h.id].name)}<span>${esc(BY[h.id].code)} · DDC ${BY[h.id].total}</span>`:(()=>{const l=chipText(h.o), nm=NONAME.has(h.o.oid)&&!LED[h.o.oid]?"":(l.nm||h.o.name||""); return nm||l.code&&!NONAME.has(h.o.oid)?`${esc(nm||l.code)}<span>DDC 없음</span>`:""})();
     if(!t){tip.hidden=true; stage.style.cursor=""; return}
     tip.hidden=false; tip.innerHTML=t; tip.style.transform=`translate(${Math.round(e.clientX-r.left+14)}px,${Math.round(e.clientY-r.top+10)}px)`; stage.style.cursor="pointer"}
   else{tip.hidden=true; stage.style.cursor=pending||editing&&tool!=="info"?"crosshair":"grab"}
