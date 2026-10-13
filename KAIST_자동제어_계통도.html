@@ -251,6 +251,8 @@ select#pick option,select#pick optgroup{background:#10171f}
   .toolbar .chips.ovf-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
   .toolbar .chips.ovf-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px);mask-image:linear-gradient(90deg,transparent,#000 36px)}
   .toolbar .chips.ovf-l.ovf-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent)}}
+/* desktop: the page is exactly one screen high, so the mouse wheel never scrolls the whole page (map / panel keep their own wheel) */
+@media (min-width:961px){html,body{height:100%;overflow:hidden;overscroll-behavior:none}.wrap{height:100vh;box-sizing:border-box;grid-template-rows:auto minmax(0,1fr)}.wrap,.main{grid-template-columns:minmax(0,1fr)}.toolbar{min-width:0}.main{min-height:0}.view{height:100%;min-height:0}}
 @media (max-width:600px){header{gap:8px}h1{font-size:1.05rem;gap:6px}img.kaist{height:22px;top:1px}.brand img{height:22px}#pgTitle{top:-1px}
   .hint{font-size:.66rem;bottom:auto;top:8px;left:8px}.view .attr{right:8px!important}}
 </style>
