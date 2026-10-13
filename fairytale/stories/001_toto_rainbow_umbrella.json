@@ -1,0 +1,162 @@
+{
+  "id": "001_toto_rainbow_umbrella",
+  "seed": 1,
+  "title": {"ko": "토토의 무지개 우산", "en": "Toto's Rainbow Umbrella"},
+  "summary": {
+    "ko": "할머니께 무지개 우산을 선물 받은 아기 토끼 토토. 비 오는 날, 숲속 친구들을 하나씩 만나며 우산을 함께 나누어 쓰는 따뜻한 이야기예요.",
+    "en": "Little bunny Toto gets a rainbow umbrella from Grandma. On a rainy day, Toto meets forest friends one by one and shares the umbrella with each of them."
+  },
+  "moral": {"ko": "나누면 기쁨이 더 커져요.", "en": "Sharing makes joy grow bigger."},
+  "tags": {"ko": ["나눔", "우정", "토끼"], "en": ["sharing", "friendship", "bunny"]},
+  "thumbnail": {"scene": 9, "t": 4.0},
+  "scenes": [
+    {
+      "bg": "meadow", "sky": "day", "hide_subtitles": true, "min_duration": 5,
+      "card": {"ko": "토토의 무지개 우산", "en": "Toto's Rainbow Umbrella"},
+      "actors": [{"char": "bunny", "x": 640, "action": "hop", "umbrella": {"width": 260}}],
+      "lines": [{"who": "narrator", "ko": "토토의 무지개 우산", "en": "Toto's Rainbow Umbrella"}]
+    },
+    {
+      "bg": "meadow", "sky": "day",
+      "props": [{"type": "house", "x": 1020, "y": 560, "scale": 1.0}, {"type": "gift", "x": 760, "y": 615}],
+      "actors": [{"char": "bunny", "x": [380, 560], "move": [0.0, 0.3]}],
+      "lines": [
+        {"who": "narrator", "ko": "푸른 언덕 아래, 하얀 아기 토끼 토토가 살았어요.", "en": "At the bottom of a green hill lived a little white bunny named Toto."},
+        {"who": "narrator", "ko": "어느 날 아침, 할머니가 토토에게 선물 상자를 주셨어요.", "en": "One morning, Grandma gave Toto a present."},
+        {"who": "bunny", "mood": "surprised", "ko": "우와! 이게 뭘까?", "en": "Wow! What could it be?"}
+      ]
+    },
+    {
+      "bg": "meadow", "sky": "day", "weather": "sparkle",
+      "actors": [{"char": "bunny", "x": [420, 820], "action": "hop", "umbrella": {"width": 260}}],
+      "lines": [
+        {"who": "narrator", "ko": "상자 안에는 일곱 빛깔 무지개 우산이 들어 있었어요.", "en": "Inside the box was an umbrella with all seven colors of the rainbow."},
+        {"who": "bunny", "ko": "정말 예쁘다! 비가 오면 꼭 쓸 거야!", "en": "It's so pretty! I'll use it when it rains!"}
+      ]
+    },
+    {
+      "bg": "meadow", "sky": "day", "sky_to": "cloudy", "weather": "rain", "weather_ramp": [0.35, 0.6],
+      "actors": [{"char": "bunny", "x": [260, 700], "umbrella": {"width": 260}}],
+      "lines": [
+        {"who": "narrator", "ko": "그때, 하늘에 먹구름이 몰려왔어요.", "en": "Just then, dark clouds rolled across the sky."},
+        {"who": "narrator", "ko": "투둑, 투둑! 비가 내리기 시작했어요.", "en": "Pitter, patter! The rain began to fall."},
+        {"who": "bunny", "ko": "야호! 드디어 우산을 쓸 수 있어!", "en": "Hooray! Now I can use my umbrella!"}
+      ]
+    },
+    {
+      "bg": "forest", "sky": "cloudy", "weather": "rain",
+      "props": [{"type": "leaf", "x": 830, "y": 440, "scale": 0.7}],
+      "actors": [
+        {"char": "squirrel", "x": 830, "face": -1, "action": "shiver", "mood": "sad", "scale": 0.95},
+        {"char": "bunny", "x": [180, 560], "move": [0.0, 0.35], "umbrella": {"width": 260}}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "숲길을 걷던 토토는 다람쥐 도도를 만났어요.", "en": "Walking through the forest, Toto met Dodo the squirrel."},
+        {"who": "narrator", "ko": "도도는 작은 나뭇잎 아래에서 덜덜 떨고 있었지요.", "en": "Dodo was shivering under a tiny leaf."},
+        {"who": "squirrel", "ko": "으슬으슬 추워. 꼬리가 다 젖었어.", "en": "Brrr, I'm so cold. My tail is all wet."},
+        {"who": "bunny", "ko": "도도야, 내 우산 같이 쓰자!", "en": "Dodo, come share my umbrella!"}
+      ]
+    },
+    {
+      "bg": "forest", "sky": "cloudy", "weather": "rain",
+      "actors": [
+        {"char": "squirrel", "x": [400, 900], "scale": 0.95},
+        {"char": "bunny", "x": [300, 800], "umbrella": {"width": 300}}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "토토와 도도는 우산을 함께 쓰고 걸었어요.", "en": "Toto and Dodo walked together under the umbrella."},
+        {"who": "squirrel", "ko": "고마워, 토토! 이제 하나도 안 추워.", "en": "Thank you, Toto! I'm not cold anymore."},
+        {"who": "narrator", "ko": "우산 아래는 아늑하고 따뜻했어요.", "en": "It was cozy and warm under the umbrella."}
+      ]
+    },
+    {
+      "bg": "riverside", "sky": "cloudy", "weather": "rain",
+      "props": [{"type": "puddle", "x": 880, "y": 625}],
+      "actors": [
+        {"char": "duck", "x": 880, "face": -1, "action": "hop", "arms": "up", "y": 620},
+        {"char": "squirrel", "x": [200, 480], "move": [0.0, 0.3], "scale": 0.95},
+        {"char": "bunny", "x": [110, 390], "move": [0.0, 0.3], "umbrella": {"width": 300}}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "냇가에 다다르자, 아기 오리 삐삐가 첨벙첨벙 놀고 있었어요.", "en": "At the stream, Pip the duckling was splashing in a puddle."},
+        {"who": "bunny", "ko": "삐삐야, 비 맞으면 감기 걸려! 우산 같이 쓰자!", "en": "Pip, you'll catch a cold! Come share our umbrella!"},
+        {"who": "duck", "ko": "꽥꽥! 고마워. 그런데 난 오리라서 비가 정말 좋아!", "en": "Quack quack! Thank you, but I'm a duck. I love the rain!"},
+        {"who": "narrator", "ko": "토토와 도도는 깔깔 웃었어요.", "en": "Toto and Dodo giggled."}
+      ]
+    },
+    {
+      "bg": "riverside", "sky": "cloudy", "weather": "rain",
+      "actors": [
+        {"char": "duck", "x": [560, 1060], "y": 620},
+        {"char": "squirrel", "x": [400, 900], "scale": 0.95},
+        {"char": "bunny", "x": [300, 800], "umbrella": {"width": 300}}
+      ],
+      "lines": [
+        {"who": "duck", "ko": "그래도 친구들이랑 같이 가고 싶어!", "en": "But I still want to walk with my friends!"},
+        {"who": "narrator", "ko": "셋은 노래를 부르며 함께 걸었어요.", "en": "The three friends sang a song as they walked together."},
+        {"who": "bunny", "ko": "비야 비야 내려라, 우리는 함께 간다!", "en": "Rain, rain, come and play, we're together all the way!"}
+      ]
+    },
+    {
+      "bg": "forest", "sky": "cloudy", "weather": "rain",
+      "actors": [
+        {"char": "bear", "x": 900, "face": -1, "mood": "sad", "scale": 1.25, "y": 630},
+        {"char": "duck", "x": [180, 520], "move": [0.0, 0.25], "y": 625},
+        {"char": "squirrel", "x": [100, 440], "move": [0.0, 0.25], "scale": 0.95},
+        {"char": "bunny", "x": [20, 360], "move": [0.0, 0.25], "umbrella": {"width": 300}}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "그런데 커다란 나무 아래에서 곰 보미가 훌쩍이고 있었어요.", "en": "Under a big tree, Bomi the bear was sniffling."},
+        {"who": "bear", "mood": "sad", "ko": "나는 몸이 너무 커서, 어떤 우산도 나한테는 작아.", "en": "I'm so big that every umbrella is too small for me."},
+        {"who": "narrator", "ko": "작은 우산 하나로 커다란 보미를 씌워 줄 수 있을까요?", "en": "Could one little umbrella cover big Bomi?"},
+        {"who": "bunny", "mood": "surprised", "ko": "음… 좋은 생각이 났어!", "en": "Hmm… I have an idea!"}
+      ]
+    },
+    {
+      "bg": "forest", "sky": "cloudy", "weather": "rain", "zoom": [1.0, 1.12], "focus": [640, 420],
+      "actors": [
+        {"char": "bear", "x": 640, "y": 650, "scale": 1.3, "arms": "hug"},
+        {"char": "squirrel", "x": 650, "y": 372, "scale": 0.6, "z": 100, "shadow": false},
+        {"char": "duck", "x": 705, "y": 568, "scale": 0.7, "z": 110, "shadow": false, "face": -1},
+        {"char": "bunny", "x": 585, "y": 575, "scale": 0.65, "z": 120, "shadow": false,
+         "umbrella": {"width": 560, "top": -500}}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "토토는 우산을 높이 들고, 보미 품에 쏙 안겼어요.", "en": "Toto held the umbrella up high and snuggled into Bomi's arms."},
+        {"who": "narrator", "ko": "도도는 보미 머리 위로, 삐삐도 보미 품에 폭 안겼지요.", "en": "Dodo climbed onto Bomi's head, and Pip cuddled up too."},
+        {"who": "bear", "ko": "우와! 우산 하나로 우리 모두 비를 피할 수 있어!", "en": "Wow! One umbrella keeps all of us dry!"},
+        {"who": "squirrel", "ko": "함께하니까 우산이 더 커진 것 같아!", "en": "Sharing makes the umbrella feel bigger!"}
+      ]
+    },
+    {
+      "bg": "meadow", "sky": "cloudy", "sky_to": "day", "weather": "rain", "weather_ramp": [0.3, 0.0], "rainbow": true,
+      "actors": [
+        {"char": "bear", "x": 330, "action": "hop", "scale": 1.15},
+        {"char": "bunny", "x": 560, "action": "jump", "umbrella": {"width": 260}},
+        {"char": "squirrel", "x": 760, "action": "hop", "arms": "up"},
+        {"char": "duck", "x": 940, "action": "jump", "face": -1}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "어느새 비가 그치고, 하늘에 커다란 무지개가 떴어요.", "en": "Soon the rain stopped, and a big rainbow appeared in the sky."},
+        {"who": "bunny", "ko": "봐! 내 우산이랑 똑같은 무지개야!", "en": "Look! A rainbow just like my umbrella!"},
+        {"who": "narrator", "ko": "친구들은 무지개 아래에서 신나게 뛰어놀았답니다.", "en": "The friends played happily under the rainbow."}
+      ]
+    },
+    {
+      "bg": "meadow", "sky": "sunset", "weather": "sparkle", "min_duration": 6,
+      "card": {"ko": "나누면 기쁨이 커져요", "en": "Sharing makes joy grow!"},
+      "card_sub": {"ko": "다음 이야기에서 또 만나요!", "en": "See you in the next story!"},
+      "actors": [
+        {"char": "bear", "x": 360, "arms": "wave", "scale": 1.1},
+        {"char": "bunny", "x": 540, "arms": "wave"},
+        {"char": "squirrel", "x": 730, "arms": "wave"},
+        {"char": "duck", "x": 900, "arms": "wave", "face": -1}
+      ],
+      "lines": [
+        {"who": "narrator", "ko": "나누면 기쁨은 두 배, 아니 세 배, 네 배가 된대요.", "en": "When we share, our joy grows two, three, even four times bigger."},
+        {"who": "narrator", "ko": "여러분도 오늘 친구와 무언가를 나누어 보는 건 어때요?", "en": "Why don't you try sharing something with a friend today?"},
+        {"who": "narrator", "ko": "다음 이야기에서 또 만나요. 안녕!", "en": "See you in the next story. Bye-bye!"}
+      ]
+    }
+  ]
+}
