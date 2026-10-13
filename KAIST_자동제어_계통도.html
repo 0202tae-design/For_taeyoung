@@ -239,6 +239,13 @@ select#pick option,select#pick optgroup{background:#10171f}
 .eqadd h4{margin:0 0 4px;font-size:.84rem;color:#ffcf8a}
 .eqf select{font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:3px;padding:4px 6px;min-width:0}
 .eqbd .ghost{font:inherit;font-size:.8rem;background:transparent;color:#ff9b8a;border:1px solid #6a3a35;border-radius:3px;padding:5px 10px;margin-left:6px;cursor:pointer}
+/* wide screens: keep the toolbar on one row; the zone chips scroll sideways (wheel works) and fade at the cut edge */
+@media (min-width:1200px){.toolbar{flex-wrap:nowrap}.toolbar>*{flex-shrink:0}.toolbar .chips{flex:0 1 auto;min-width:120px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.toolbar .chips::-webkit-scrollbar{display:none}.toolbar .chips .chip{flex:none;white-space:nowrap}
+  .toolbar .chips.ovf-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+  .toolbar .chips.ovf-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px);mask-image:linear-gradient(90deg,transparent,#000 36px)}
+  .toolbar .chips.ovf-l.ovf-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent)}}
+@media (max-width:600px){header{gap:8px}h1{font-size:1.05rem;gap:6px}img.kaist{height:22px;top:1px}.brand img{height:22px}#pgTitle{top:-1px}
+  .hint{font-size:.66rem;bottom:auto;top:8px;left:8px}.view .attr{right:8px!important}}
 </style>
 
 <div class="wrap">
@@ -1353,13 +1360,15 @@ select#pick option,select#pick optgroup{background:#10171f}
   function cleanSource(){
     var r=document.documentElement.cloneNode(true), q=function(sel){return r.querySelector(sel)};
     ["#labels","#panel","#pick","#hubchips","#legend","#bpList","#bpBtn"].forEach(function(sel){var e=q(sel); if(e)e.innerHTML=""});
-    var st=q("#stage"); if(st){st.removeAttribute("style"); var cv=st.querySelector("canvas"); if(cv)cv.remove(); var tip=st.querySelector("#tip"); if(tip){tip.setAttribute("hidden",""); tip.removeAttribute("style"); tip.innerHTML=""}}
+    var st=q("#stage"); if(st){st.removeAttribute("style"); st.querySelectorAll("canvas").forEach(function(c){c.remove()}); var tip=st.querySelector("#tip"); if(tip){tip.setAttribute("hidden",""); tip.removeAttribute("style"); tip.innerHTML=""}}
     var x=q("#exportBtn"); if(x)x.remove();
     var bl=q("#bpList"); if(bl)bl.setAttribute("hidden",""); var mn=q(".main"); if(mn)mn.removeAttribute("style"); ["#pgW","#pgH","#pgC"].forEach(function(sel){var g=q(sel); if(g)g.removeAttribute("style")});
     var ed=q("#edbar"); if(ed)ed.setAttribute("hidden",""); var sb=q("#searchBtn"); if(sb)sb.setAttribute("aria-pressed","false");
     var eb=q("#editBtn"); if(eb){eb.setAttribute("hidden",""); eb.setAttribute("aria-pressed","false"); eb.textContent="편집"}
     var nb=q("#namesBtn"); if(nb)nb.setAttribute("aria-pressed","true");
     var rs=q("#reset"); if(rs)rs.setAttribute("disabled","");
+    // edited title/description live in the embedded edits; the page text keeps the original so "원래대로" still works
+    if(typeof PAGEBASE!=="undefined"){var pt=q("#pgTitle"), ps=q("#pgSub"); if(pt)pt.textContent=PAGEBASE.title; if(ps)ps.textContent=PAGEBASE.sub}
     return "<!doctype html>\n"+r.outerHTML;
   }
   window.LOCALDB={
@@ -1823,10 +1832,13 @@ function layoutLabels(Wd,Hd){
     rack.children.forEach(sp=>{sp.getWorldPosition(wp); const d=camera.position.distanceTo(wp); v.copy(wp).project(camera); if(v.z>=1)return;
       const hw=sp.scale.x*rack.scale.x/2/(d*th)*Hd/2, hh=sp.scale.y*rack.scale.y/2/(d*th)*Hd/2, cx=(v.x*.5+.5)*Wd, cy=(-v.y*.5+.5)*Hd; RB.push([cx-hw,cy-hh,cx+hw,cy+hh])})}
   const hitR=r=>RB.some(p=>r[0]<p[2]&&r[2]>p[0]&&r[1]<p[3]&&r[3]>p[1]); RB.forEach(p=>placed.push(p));
-  LABELS.forEach(L=>{ if(L.el.hidden)return; if(L.campus&&L.campus!==CAMPUS){L.el.style.visibility="hidden";return}
+  // the selected building's label goes first; the rest step up/down to the nearest free slot instead of overlapping
+  LABELS.slice().sort((a,b)=>b.el.classList.contains("on")-a.el.classList.contains("on")).forEach(L=>{ if(L.el.hidden)return; if(L.campus&&L.campus!==CAMPUS){L.el.style.visibility="hidden";return}
     const r=labelBox2(L,Wd,Hd); if(!r||!r[2]){L.el.style.visibility="hidden";return}
     if(L!==rack.userData.lab&&hitR([r[0],r[1],r[0]+(L.w||0),r[1]+(L.hh||0)])){L.el.style.visibility="hidden";return}
-    L.el.style.visibility="visible"; L.el.style.transform=`translate(${r[0]}px,${r[1]}px)`; placed.push([r[0]-4,r[1]-2,r[0]+L.w+4,r[1]+L.hh+2]) });
+    const free=y=>!placed.some(p=>r[0]-4<p[2]&&r[0]+L.w+4>p[0]&&y-2<p[3]&&y+L.hh+2>p[1]), st=L.hh+5;
+    let y=r[1]; if(!free(y)){const d=[-st,st,-2*st,2*st,-3*st].find(d=>free(r[1]+d)); if(d!=null)y=r[1]+d}
+    L.el.style.visibility="visible"; L.el.style.transform=`translate(${r[0]}px,${y}px)`; placed.push([r[0]-4,y-2,r[0]+L.w+4,y+L.hh+2]) });
   if(!showNames)return;
   NAMES.forEach(n=>{
     if(n.el.hidden||n.o.campus!==CAMPUS){n.el.style.visibility="hidden";return}
@@ -1949,16 +1961,23 @@ function bpRender(q){q=(q||"").trim().toLowerCase();
     return bs.length?`<div class="bpg" style="color:var(${HUBS[h].css})"><i style="background:var(${HUBS[h].css})"></i>${esc(HUBNAME(h))} 계통</div>`+bs.map(b=>`<button type="button" class="bpo" role="option" data-id="${b.id}" aria-selected="${b.id===pick.value}"><span class="bpc" style="color:var(${HUBS[h].css})">${esc(b.code)}</span><span class="bpn">${esc(b.name)}</span></button>`).join(""):""}).join("");
   $("bpItems").innerHTML=html||`<p class="msg" style="padding:6px 10px">찾는 건물이 없습니다.</p>`;
   $("bpItems").querySelectorAll(".bpo").forEach(o=>o.onclick=()=>{bpClose(); pick.value=o.dataset.id; pick.onchange()})}
-function bpOpen(){bpList.innerHTML=`<input type="search" id="bpQ" placeholder="번호·이름으로 찾기" aria-label="건물 찾기"><div id="bpItems"></div>`; bpList.hidden=false; bpBtn.setAttribute("aria-expanded","true");
-  bpRender(""); const q=$("bpQ"); q.oninput=()=>bpRender(q.value); q.onkeydown=e=>{if(e.key==="Escape"){bpClose(); bpBtn.focus()} if(e.key==="Enter"){const f=bpList.querySelector(".bpo"); if(f)f.click()}};
+function bpOpen(){bpList.innerHTML=`<input type="search" id="bpQ" placeholder="번호·이름으로 찾기 (↑↓·Enter)" aria-label="건물 찾기"><div id="bpItems"></div>`; bpList.hidden=false; bpBtn.setAttribute("aria-expanded","true");
+  bpRender(""); const q=$("bpQ"); q.oninput=()=>bpRender(q.value); q.onkeydown=e=>{if(e.key==="Escape"){e.stopPropagation(); bpClose(); bpBtn.focus()}
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault(); const os=[...bpList.querySelectorAll(".bpo")]; if(!os.length)return; let i=os.findIndex(o=>o.classList.contains("act"));
+      i=e.key==="ArrowDown"?Math.min(os.length-1,i+1):Math.max(0,i-1); os.forEach((o,j)=>o.classList.toggle("act",j===i)); os[i].scrollIntoView({block:"nearest"})}
+    if(e.key==="Enter"){const f=bpList.querySelector(".bpo.act")||bpList.querySelector(".bpo"); if(f)f.click()}};
   setTimeout(()=>q.focus(),0); const s=bpList.querySelector('.bpo[aria-selected="true"]'); if(s)bpList.scrollTop=s.offsetTop-bpList.clientHeight/2}
 function bpClose(){bpList.hidden=true; bpBtn.setAttribute("aria-expanded","false")}
 bpBtn.onclick=()=>bpList.hidden?bpOpen():bpClose();
 document.addEventListener("pointerdown",e=>{if(!bpList.hidden&&!$("bpick").contains(e.target))bpClose()});
 pick.onchange=()=>{panelMode=null; select(pick.value||null); tintPick()};
 const hubchips=$("hubchips");
-Object.keys(HUBS).forEach(h=>{const c=document.createElement("button");c.className="chip";c.id="hub-"+h;c.setAttribute("aria-pressed","false");c.onclick=()=>{panelMode=null; selectHub(curHub===h?null:h)};hubchips.appendChild(c)});
-function updateHubChips(){Object.keys(HUBS).forEach(h=>{const c=$("hub-"+h); c.innerHTML=`<i style="background:var(${HUBS[h].css})"></i>${esc(HUBNAME(h))}`; c.hidden=HUBS[h].campus!==CAMPUS})}
+Object.keys(HUBS).forEach(h=>{const c=document.createElement("button");c.className="chip";c.id="hub-"+h;c.setAttribute("aria-pressed","false");c.onclick=()=>{panelMode=null; selectHub(curHub===h?null:h); c.scrollIntoView({block:"nearest",inline:"nearest"})};hubchips.appendChild(c)});
+function updateHubChips(){Object.keys(HUBS).forEach(h=>{const c=$("hub-"+h); c.innerHTML=`<i style="background:var(${HUBS[h].css})"></i>${esc(HUBNAME(h))}`; c.hidden=HUBS[h].campus!==CAMPUS}); chipFade()}
+// chip row cut off on one row: fade the cut edge(s), mouse wheel scrolls it sideways
+const chipFade=()=>{const c=hubchips, m=c.scrollWidth-c.clientWidth; c.classList.toggle("ovf-l",m>1&&c.scrollLeft>1); c.classList.toggle("ovf-r",m>1&&c.scrollLeft<m-1)};
+hubchips.addEventListener("scroll",chipFade); new ResizeObserver(chipFade).observe(hubchips);
+hubchips.addEventListener("wheel",e=>{if(hubchips.scrollWidth<=hubchips.clientWidth||Math.abs(e.deltaX)>Math.abs(e.deltaY))return; e.preventDefault(); hubchips.scrollLeft+=e.deltaY},{passive:false});
 const resetBtn=$("reset"); resetBtn.onclick=()=>{panelMode=null; selectHub(null); select(null)};
 
 var hubAsBld=false, cur=null, curHub=null, curOther=null, curNew=null, fly=null, panelMode=null;
@@ -2133,6 +2152,7 @@ function renderEqPanel(p){
 function selectOther(o){ select(null,{quiet:true}); curOther=o; paintBuildings(); renderPanel() }
 document.addEventListener("keydown",e=>{
   if(e.key!=="Escape")return;
+  const f=e.target; if(f&&f.matches&&f.matches("input,textarea,select")&&f.closest(".panel")){f.blur(); return}
   if(pending||linkChild){pending=null; linkChild=null; setHint(toolHint()); return}
   if(cur||curHub||curOther||curNew||panelMode){panelMode=null; curNew=null; selectHub(null); select(null)}
 });
@@ -2290,7 +2310,7 @@ function renderPanel(){
   const list=curHub?B.filter(b=>b.hub===curHub):B.filter(inCampus), all=list.flatMap(b=>b.p), tot=all.reduce((a,p)=>a+p[2],0);
   const un=curHub?[]:unplacedNow(), unTot=un.reduce((a,u)=>a+u.p.reduce((x,p)=>x+p[2],0),0);
   p.innerHTML=`<div class="panel-hd"><div class="eyebrow">${CAMPUS_NAME[CAMPUS]} · ${curHub?esc(HUBNAME(curHub))+" 계통":"전체"}</div>${curHub&&hubAsBld?`<h2 style="color:var(${HUBS[curHub].css})">${esc(HUBNAME(curHub))}</h2><p class="note" style="margin-top:4px">${esc(OSM.hubs[curHub].sys||"")}</p>`:""}<h2${curHub&&hubAsBld?' hidden':''}>${curHub?esc(OSM.hubs[curHub].sys):`DDC 건물 ${list.length}곳 · 구역 ${campusHubs().length}곳`}</h2>${PE("hub")}</div>
-    ${editing&&!curHub?`<div class="sec"><p class="p-hint" style="color:#ffcf8a">편집 모드입니다. 위쪽에서 도구를 고르고 지도에서 건물을 누르세요. 바꾼 내용은 저장하면 모든 사람에게 보입니다.</p></div>`:""}
+    ${editing&&!curHub?`<div class="sec"><p class="p-hint" style="color:#ffcf8a">편집 모드입니다. 위쪽에서 도구를 고르고 지도에서 건물을 누르세요. ${OFFLINE?"바꾼 내용은 이 PC에 보관되며, '수정본 파일 저장'으로 공유할 수 있습니다.":"바꾼 내용은 저장하면 모든 사람에게 보입니다."}</p></div>`:""}
     ${hubAsBld&&curHub?"":`<div class="stats"><div class="stat"><b>${tot}</b><span>DDC (지도)</span></div>
       <div class="stat"><b>${list.length}</b><span>건물</span></div>
       <div class="stat"><b>${CAMPUS==="munji"?Object.values(DEV).filter(d=>d.kind==="bna"&&(curHub?d.hs.has(curHub):HUBS[d.hub].campus===CAMPUS)).length:zoneEquip(curHub?B.filter(b=>b.hub===curHub):B.filter(inCampus)).filter(x=>x.grp==="BNA").length}</b><span>${CAMPUS==="munji"?"XNU":"BNA"}</span></div></div>`}
@@ -2316,6 +2336,7 @@ function renderPanel(){
 // ---------- editing ----------
 var editing=false, DB=null, tool="info", pending=null, linkChild=null, pendingSelect=null;
 const editBtn=$("editBtn"), edbar=$("edbar"), hintEl=$("edHint");
+const OFFLINE=!!window.LOCALDB, SAVENOTE=OFFLINE?"저장하면 이 PC(브라우저)에 보관됩니다. 다른 사람에게 전하려면 '수정본 파일 저장'으로 새 파일을 내려받아 전달하세요.":"저장하면 이 페이지를 여는 모든 사람에게 바뀐 내용이 보입니다.";
 const setHint=s=>{hintEl.textContent=s||""};
 const toolHint=()=>tool==="info"?"건물을 누르면 패널 위쪽에 편집 칸이 열립니다.":tool==="add"?"DDC를 새로 등록할 건물을 지도에서 누르세요.":"연결을 바꿀 DDC 건물을 먼저 누르고, 이어서 상위 연결 대상(기계실 마커 또는 DDC 건물)을 누르세요.";
 function startPick(msg,fn){pending=fn; setHint(msg+" · Esc: 취소")}
@@ -2357,7 +2378,7 @@ function bldForm(b,isNew){
     <button class="add" type="button" id="edAdd">+ DDC 줄 추가</button>`:`<p class="msg" style="margin:6px 0 0">DDC·서버·스테이션 등 장비는 아래 '장비' 항목에서 하나씩 추가·수정·삭제합니다.</p>`}
     <div class="acts"><button class="save" type="submit">${isNew?"등록":"저장"}</button><button class="ghost" type="button" id="edCancel">취소</button><button class="ghost" type="button" id="edMove">다른 건물로 이동</button>
       ${!isNew&&b.edited&&!b.isNew?`<button class="ghost" type="button" id="edReset">원래대로</button>`:""}${isNew?"":`<button class="danger" type="button" id="edDel">DDC 건물 삭제</button>`}</div>
-    <p class="msg" id="edMsg">저장하면 이 페이지를 여는 모든 사람에게 바뀐 내용이 보입니다.</p></form>`;
+    <p class="msg" id="edMsg">${SAVENOTE}</p></form>`;
 }
 function readRows(){return [...document.querySelectorAll("#edRows .row")].map(r=>({n:r.querySelector(".nm").value.trim(),t:r.querySelector(".ty").value,q:Math.max(0,Math.round(+r.querySelector(".qt").value||0)),c:r.querySelector(".conn").value.trim()})).filter(r=>r.n||r.q)}
 function footDoc(o,over){const e=LED[o.oid]||{}; return Object.assign({oid:o.oid,code:e.code||"",name:e.name||"",lv:e.lv||0,sty:e.sty||"",note:e.note||"",at:Date.now()},over)}
