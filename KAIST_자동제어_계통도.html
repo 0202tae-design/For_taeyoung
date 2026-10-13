@@ -2344,7 +2344,7 @@ function renderPanel(){
       <div class="stat"><b>${list.length}</b><span>건물</span></div>
       <div class="stat"><b>${CAMPUS==="munji"?Object.values(DEV).filter(d=>d.kind==="bna"&&(curHub?d.hs.has(curHub):HUBS[d.hub].campus===CAMPUS)).length:zoneEquip(curHub?B.filter(b=>b.hub===curHub):B.filter(inCampus)).filter(x=>x.grp==="BNA").length}</b><span>${CAMPUS==="munji"?"XNU":"BNA"}</span></div></div>`}
     ${hubAsBld&&curHub?"":`<div class="sec"><h3>종류별 수량</h3>${eqTypeBlock(zoneEquip(list))}</div>`}
-    ${curHub&&HQ(curHub)?equipBlock(hubPseudo(curHub)):curHub?eqBlock([curHub]):""}
+    ${curHub&&HQ(curHub)?equipBlock(hubPseudo(curHub)):curHub?hubEquip(curHub):""}
     ${hubAsBld&&curHub?`<div class="sec"><h3>종류별 수량</h3>${eqTypeBlock(equipList(hubPseudo(curHub)))}</div>`:""}
     ${curHub?"":`<div class="sec"><h3>구역별 (서버 기준)</h3><table><thead><tr><th>구역</th><th class="n">건물</th><th class="n">DDC</th></tr></thead><tbody>${campusHubs().map(h=>{const bs=B.filter(b=>b.hub===h);return `<tr class="row-btn" data-hub="${h}" tabindex="0"><td><span class="tag" style="color:var(--ink)"><i style="background:var(${HUBS[h].css});border-radius:50%"></i>${esc(HUBNAME(h))}</span>${h==="CP"?`<br><span style="font-size:.72rem;color:var(--muted)">서측기계실(희망관 지하) 포함</span>`:HUBS[h].uplink?`<br><span style="font-size:.72rem;color:var(--muted)">자체 서버 · ${esc(HUBNAME(HUBS[h].uplink))}${HUBS[h].upTxt?"와 "+HUBS[h].upTxt:"에서 감시"}</span>`:h==="QP"?`<br><span style="font-size:.72rem;color:var(--muted)">자체 시스템 · 향후 예정</span>`:""}</td><td class="n">${bs.length}</td><td class="n">${bs.reduce((a,b)=>a+b.total,0)}</td></tr>`}).join("")}</tbody></table></div>`}
     <div class="sec"><h3>건물별 DDC (많은 순) · 누르면 이동</h3><div class="list"><table><tbody>
@@ -2356,7 +2356,7 @@ function renderPanel(){
       <p class="warn">구성도에는 있지만 실제 건물을 특정하지 못한 항목입니다.${editing?" '지도에 배치'를 누르고 건물을 고르면 등록할 수 있습니다.":""}</p></div>`:""}
     ${hubAsBld&&curHub?"":`<div class="sec"><p class="p-hint">${esc((META&&META.note)||PAGEBASE.note)}</p></div>`}
     ${hubAsBld&&curHub?`<div class="sec"><h3>MEMO</h3><p class="note" style="color:var(--muted)">메모 없음</p></div>`:""}`;
-  bindPE(p); bindRows(p); if(curHub&&HQ(curHub))bindEquip(p,hubPseudo(curHub));
+  bindPE(p); bindRows(p); if(curHub&&HQ(curHub))bindEquip(p,hubPseudo(curHub)); else if(curHub&&hubNode(curHub))bindEquip(p,hubNode(curHub));
   p.querySelectorAll("[data-goto]").forEach(a=>a.onclick=e=>{e.preventDefault(); panelMode=null; select(a.dataset.goto)});
   p.querySelectorAll("[data-place]").forEach(btn=>btn.onclick=()=>{const u=un[+btn.dataset.place];
     startPick(`'${u.name}'을(를) 배치할 건물을 지도에서 누르세요`,o=>openNew(o,{name:u.name,p:clone(u.p),from:u.name,hub:u.hub,net:u.net}))});
@@ -2529,9 +2529,14 @@ const eqToText=rows=>rows.map(r=>EQCOLS.map((_,i)=>r[i]||"").join(" | ")).join("
 const eqKind=t=>/서버/.test(t)?"var(--accent)":/스테이션/.test(t)?"var(--t-x8)":"var(--muted)";
 function eqTable(rows,showBld){ if(!rows.length)return "";
   return `<table><thead><tr><th>구분 · 이름</th><th>위치</th><th class="n">IP</th></tr></thead><tbody>${rows.map(r=>`<tr${r[6]&&BY[r[6]]?` class="row-btn" tabindex="0" data-id="${esc(r[6])}"`:""}><td><span class="tag" style="color:var(--ink)"><i style="background:${eqKind(r[0])}"></i>${esc(r[0])}</span><br><span style="font-family:var(--font-mono);font-size:.72rem">${esc(r[1])}</span></td><td>${esc(r[2])}${r[3]||r[4]?`<br><span style="color:var(--muted);font-size:.7rem">${esc([r[3],r[4]].filter(Boolean).join(" · "))}</span>`:""}</td><td class="n" style="font-size:.72rem">${esc(r[5]||"")}</td></tr>`).join("")}</tbody></table>`}
-function eqBlock(hubs){const rows=hubs.flatMap(h=>hubEq(h)); if(!rows.length)return "";
+// zone panel: the equipment of the building that holds the zone's server / plant room (as 학사기계실 shows its own), then servers kept elsewhere
+const hubNode=h=>{const b=BY[HUBS[h].node]; return b&&!b.deleted?b:null};
+function hubEquip(h){const nb=hubNode(h); if(!nb)return eqBlock([h]);
+  const other=hubEq(h).filter(r=>r[6]!==nb.id);
+  return equipBlock(nb).replace("<h3>장비",`<h3>장비 · ${esc(nb.name)}`)+(other.length?eqBlock([],other,"다른 건물의 서버 · 스테이션"):"")}
+function eqBlock(hubs,only,title){const rows=only||hubs.flatMap(h=>hubEq(h)); if(!rows.length)return "";
   const n=t=>rows.filter(r=>t.test(r[0])).length;
-  return `<div class="sec"><h3>서버 · 스테이션 · 서버 ${n(/^서버$/)} · 스테이션 ${n(/^스테이션$/)}${rows.length-n(/^서버$/)-n(/^스테이션$/)?` · 기타 ${rows.length-n(/^서버$/)-n(/^스테이션$/)}`:""}</h3><div class="list" style="max-height:300px">${eqTable(rows)}</div></div>`}
+  return `<div class="sec"><h3>${title||"서버 · 스테이션"} · 서버 ${n(/^서버$/)} · 스테이션 ${n(/^스테이션$/)}${rows.length-n(/^서버$/)-n(/^스테이션$/)?` · 기타 ${rows.length-n(/^서버$/)-n(/^스테이션$/)}`:""}</h3><div class="list" style="max-height:300px">${eqTable(rows)}</div></div>`}
 
 // ---------- equipment list per building (servers, stations, BNA/gateways, DDC) with click-to-open details ----------
 let EQD={}, EQA={}; const openEq=new Set();
